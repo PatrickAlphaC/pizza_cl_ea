@@ -1,19 +1,20 @@
-# Chainlink NodeJS External Adapter Template
+# Pizza Chainlink External Adapter
 
-This template provides a basic framework for developing Chainlink external adapters in NodeJS. Comments are included to assist with development and testing of the external adapter. Once the API-specific values (like query parameters and API key authentication) have been added to the adapter, it is very easy to add some tests to verify that the data will be correctly formatted when returned to the Chainlink node. There is no need to use any additional frameworks or to run a Chainlink node in order to test the adapter.
+This repo is for demo purposes only and is filled with Garlic Bready Spaghetti code. If you know how to make this better, feel free to make a PR :D
 
-## Creating your own adapter from this template
+Right now, it's a bit hardcoded to a dominos in Belmont. You'll need to uncomment a section in order_pizza.js to search for nearby pizza joints near you. 
 
-Clone this repo and change "ExternalAdapterProject" below to the name of your project
+## Creating the adapter
 
 ```bash
-git clone https://github.com/thodges-gh/CL-EA-NodeJS-Template.git ExternalAdapterProject
+git clone https://github.com/PatrickAlphaC/pizza_cl_ea
 ```
 
-Enter into the newly-created directory
+Enter into the newly-created directory, and then pull the repo with the pizza script
 
 ```bash
-cd ExternalAdapterProject
+cd pizza_cl_ea
+git clone https://github.com/PatrickAlphaC/node-dominos-pizza-api
 ```
 
 You can remove the existing git history by running:
@@ -22,23 +23,42 @@ You can remove the existing git history by running:
 rm -rf .git
 ```
 
+Right now, the code for running the API is in `https://github.com/PatrickAlphaC/node-dominos-pizza-api/examples/order_pizza.js`. The server makes a command line call to this. Basically, I have no idea how to make a commonjs server work with ES6, and I didn't want to reinvent the pizza API. So.... if someone wants to fixup this repo so that it's not so disgusting... please do :)
+
 See [Install Locally](#install-locally) for a quickstart
 
 ## Input Params
 
-- `base`, `from`, or `coin`: The symbol of the currency to query
-- `quote`, `to`, or `market`: The symbol of the currency to convert to
+- `random_number`: Random Number created by VRF to randomize the pizza
+- `place_order`: If `true` it will place the order
+
+## Environment Variables
+
+- `CREDIT_CARD_EXPIRE=MM/YY`
+- `CREDIT_CARD_NUMBER=####-####-####-####`
+- `CREDIT_CARD_POSTAL_CODE=#####`
+- `CREDIT_CARD_SECURITY_CODE=###`
+- `DELIVERY_ADDRESS=address_here`
+- `PHONE_NUMBER=###-###-####`
+- `EMAIL=***********`
+
+
+## Input 
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "random_number":32456743214256 } }'
+```
 
 ## Output
 
 ```json
 {
- "jobRunID": "278c97ffadb54a5bbb93cfec5f7b5503",
- "data": {
-  "USD": 164.02,
-  "result": 164.02
- },
- "statusCode": 200
+  "jobRunID":"0",
+  "data":{
+    "order_placed":"Fake Order Placed"
+    },
+  "statusCode":200,
+  "result":"Fake Order Placed"
 }
 ```
 
@@ -52,11 +72,7 @@ yarn
 
 ### Test
 
-Run the local tests:
-
-```bash
-yarn test
-```
+Nope, tests suck here. 
 
 Natively run the application (defaults to port 8080):
 
@@ -69,7 +85,7 @@ yarn start
 ## Call the external adapter/API server
 
 ```bash
-curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "from": "ETH", "to": "USD" } }'
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "random_number":32456743214256 } }'
 ```
 
 ## Docker

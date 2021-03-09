@@ -16,6 +16,7 @@ const customError = (data) => {
 // should be required.
 const customParams = {
     random_number: false,
+    place_order: false
 }
 
 // 92015063487167061781633754907867692445044031125743928571486643870357111455063
@@ -80,6 +81,8 @@ const createRequest = (input, callback) => {
     const validator = new Validator(callback, input, customParams)
     const jobRunID = validator.validated.id
     const random_number = validator.validated.data.random_number
+    const place_order = validator.validated.data.place_order || 'false'
+
     let pizza = create_order(random_number)
     console.log(pizza)
     let file_name = '~/code/vrf_pizza/pizza_order.json'
@@ -90,7 +93,7 @@ const createRequest = (input, callback) => {
         if (err) throw err
         console.log('Saved!')
     })
-    exec(`node ~/code/vrf_pizza/pizza_cl_ea/node-dominos-pizza-api/example/order_pizza.js ${file_name}`, (error, stdout, stderr) => {
+    exec(`node ~/code/vrf_pizza/pizza_cl_ea/node-dominos-pizza-api/example/order_pizza.js ${file_name} ${place_order}`, (error, stdout, stderr) => {
         if (error) {
             console.log(`error: ${error.message}`)
             return
@@ -102,35 +105,22 @@ const createRequest = (input, callback) => {
         console.log(`stdout: ${stdout}`)
     })
 
-    // const params = {
-    //     fsym,
-    //     tsyms
-    // }
 
-    // // This is where you would add method and headers
-    // // you can add method like GET or POST and add it to the config
-    // // The default is GET requests
-    // // method = 'get' 
-    // // headers = 'headers.....'
-    // const config = {
-    //     url,
-    //     params
-    // }
-    callback(200, "Order Placed!")
-
-    // // The Requester allows API calls be retry in case of timeout
-    // // or connection failure
-    // Requester.request(config, customError)
-    //     .then(response => {
-    //         // It's common practice to store the desired value at the top-level
-    //         // result key. This allows different adapters to be compatible with
-    //         // one another.
-    //         response.data.result = Requester.validateResultNumber(response.data, [tsyms])
-    //         callback(response.status, Requester.success(jobRunID, response))
-    //     })
-    //     .catch(error => {
-    //         callback(500, Requester.errored(jobRunID, error))
-    //     })
+    let order_placed
+    if (place_order !== 'true') {
+        order_placed = 'Fake Order Placed'
+    } else {
+        order_placed = 'Real Order Placed'
+    }
+    callback_object = {
+        "jobRunID": `${jobRunID}`,
+        "data": {
+            "order_placed": order_placed
+        },
+        "statusCode": 200,
+        "result": order_placed
+    }
+    callback(200, callback_object)
 }
 
 // This is a wrapper to allow the function to work with
