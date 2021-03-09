@@ -79,10 +79,11 @@ const create_order = (random_number) => {
 const createRequest = (input, callback) => {
     // The Validator helps you validate the Chainlink request data
     const validator = new Validator(callback, input, customParams)
-    const jobRunID = validator.validated.id
+    const id = validator.validated.id
     const random_number = validator.validated.data.random_number
     const place_order = validator.validated.data.place_order || 'false'
-
+    let order_placed
+    let status_code = 200
     let pizza = create_order(random_number)
     console.log(pizza)
     let file_name = '~/code/vrf_pizza/pizza_order.json'
@@ -96,31 +97,36 @@ const createRequest = (input, callback) => {
     exec(`node ~/code/vrf_pizza/pizza_cl_ea/node-dominos-pizza-api/example/order_pizza.js ${file_name} ${place_order}`, (error, stdout, stderr) => {
         if (error) {
             console.log(`error: ${error.message}`)
+            order_placed = "Issue placing order"
+            status_code = 400
             return
         }
         if (stderr) {
             console.log(`stderr: ${stderr}`)
+            order_placed = "Issue placing order"
+            status_code = 400
             return
         }
         console.log(`stdout: ${stdout}`)
     })
 
-
-    let order_placed
-    if (place_order !== 'true') {
-        order_placed = 'Fake Order Placed'
-    } else {
-        order_placed = 'Real Order Placed'
+    if (order_placed !== 'Issue placing order') {
+        if (place_order !== 'true') {
+            order_placed = 'Fake Order Placed'
+        } else {
+            order_placed = 'Real Order Placed'
+        }
     }
+
     callback_object = {
-        "jobRunID": `${jobRunID}`,
+        "id": `${id}`,
         "data": {
             "order_placed": order_placed
         },
-        "statusCode": 200,
+        "statusCode": status_code,
         "result": order_placed
     }
-    callback(200, callback_object)
+    callback(status_code, callback_object)
 }
 
 // This is a wrapper to allow the function to work with
