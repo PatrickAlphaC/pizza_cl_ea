@@ -86,7 +86,7 @@ const createRequest = (input, callback) => {
     let status_code = 200
     let pizza = create_order(random_number)
     console.log(pizza)
-    let file_name = '~/code/vrf_pizza/pizza_order.json'
+    let file_name = 'pizza_order.json'
     if (file_name[0] === '~') {
         file_name = path.join(process.env.HOME, file_name.slice(1))
     }
@@ -94,7 +94,7 @@ const createRequest = (input, callback) => {
         if (err) throw err
         console.log('Saved!')
     })
-    exec(`node ~/code/vrf_pizza/pizza_cl_ea/node-dominos-pizza-api/example/order_pizza.js ${file_name} ${place_order}`, (error, stdout, stderr) => {
+    exec(`node ./node-dominos-pizza-api/example/order_pizza.js ${file_name} ${place_order}`, (error, stdout, stderr) => {
         if (error) {
             console.log(`error: ${error.message}`)
             order_placed = "Issue placing order"
