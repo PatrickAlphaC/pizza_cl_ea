@@ -16,7 +16,8 @@ const customError = (data) => {
 // should be required.
 const customParams = {
     random_number: false,
-    place_order: false
+    place_order: false,
+    tmp_file: false
 }
 
 // 92015063487167061781633754907867692445044031125743928571486643870357111455063
@@ -82,11 +83,13 @@ const createRequest = (input, callback) => {
     const id = validator.validated.id
     const random_number = validator.validated.data.random_number
     const place_order = validator.validated.data.place_order || 'false'
+    const tmp_file = validator.validated.data.tmp_file || './'
+
     let order_placed
     let status_code = 200
     let pizza = create_order(random_number)
     console.log(pizza)
-    let file_name = 'pizza_order.json'
+    let file_name = tmp_file + 'pizza_order.json'
     if (file_name[0] === '~') {
         file_name = path.join(process.env.HOME, file_name.slice(1))
     }
@@ -119,7 +122,7 @@ const createRequest = (input, callback) => {
     }
 
     callback_object = {
-        "id": `${id}`,
+        "jobRunID": `${id}`,
         "data": {
             "order_placed": order_placed
         },
