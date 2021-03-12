@@ -146,7 +146,7 @@ const build_and_send_order = async (pizza, place_order) => {
 
     // console.log('\n\nPrice\n\n');
     // console.dir(order,{depth:0});
-    const tipAmount = 8
+    const tipAmount = 6
 
     //grab price from order and setup payment
     const myCard = new Payment(
