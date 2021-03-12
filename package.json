@@ -9,7 +9,9 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "@chainlink/external-adapter": "^0.2.3"
+    "@chainlink/external-adapter": "^0.2.3",
+    "@std/esm": "^0.26.0",
+    "dominos": "^3.2.0"
   },
   "devDependencies": {
     "body-parser": "^1.19.0",

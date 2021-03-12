@@ -10,14 +10,9 @@ const customError = (data) => {
     return false
 }
 
-// Define custom parameters to be used by the adapter.
-// Extra parameters can be stated in the extra object,
-// with a Boolean value indicating whether or not they
-// should be required.
 const customParams = {
     random_number: false,
-    place_order: false,
-    tmp_file: false
+    place_order: false
 }
 
 // 92015063487167061781633754907867692445044031125743928571486643870357111455063
@@ -45,7 +40,7 @@ const sauce_sizes = [0, 0.5, 1, 1.5]
 // then number of topping per side (1-4)
 // then toppings and level of topping
 // sauces and amount of sauces
-const create_order = (random_number) => {
+const create_random_pizza = (random_number) => {
     let pizza = { 'options': {}, 'code': {} }
     console.log(pizza)
     console.log(random_number)
@@ -77,59 +72,172 @@ const create_order = (random_number) => {
     return (pizza)
 }
 
+const build_order = async (pizza) => {
+    const dominos = await import('dominos')
+    Object.assign(global, dominos)
+
+    const pizza_pie = new Item(pizza)
+    let address = process.env.DELIVER_ADDRESS
+    const customer = new Customer(
+        {
+            //this could be an Address instance if you wanted 
+
+            address: address,
+            firstName: 'Patrick',
+            lastName: 'Collins',
+            //where's that 555 number from?
+            phone: process.env.PHONE_NUMBER,
+            email: process.env.EMAIL
+        }
+    )
+    let storeID = 3755
+    let distance = 100
+    // find the nearest store
+    // const nearbyStores = await new NearbyStores(customer.address)
+    // // console.log(nearbyStores)
+    // //inspect nearby stores
+    // //console.log('\n\nNearby Stores\n\n')
+    // console.dir(nearbyStores, { depth: 5 })
+
+
+    // // get closest delivery store
+    // for (const store of nearbyStores.stores) {
+    //     //inspect each store
+    //     //console.dir(store,{depth:3});
+
+    //     if (
+    //         //we check all of these because the API responses seem to say true for some
+    //         //and false for others, but it is only reliably ok for delivery if ALL are true
+    //         //this may become an additional method on the NearbyStores class.
+    //         store.IsOnlineCapable
+    //         && store.IsDeliveryStore
+    //         && store.IsOpen
+    //         && store.ServiceIsOpen.Delivery
+    //         && store.MinDistance < distance
+    //     ) {
+    //         distance = store.MinDistance
+    //         storeID = store.StoreID
+    //         //console.log(store)
+    //     }
+    // }
+
+    // if (storeID == 0) {
+    //     throw ReferenceError('No Open Stores')
+    // }
+
+    console.log(storeID, distance)
+
+
+    //create
+    const order = new Order(customer)
+
+    // console.log('\n\nInstance\n\n');
+    // console.dir(order,{depth:0});
+
+    order.storeID = storeID
+    // console.log(order.storeId)
+    // add pizza_pie
+    order.addItem(pizza_pie)
+    //validate order
+    await order.validate()
+
+    // console.log('\n\nValidate\n\n');
+    //console.dir(order,{depth:3});
+
+    //price order
+    const price = await order.price()
+    //console.log(price)
+
+    // console.log('\n\nPrice\n\n');
+    // console.dir(order,{depth:0});
+    const tipAmount = 8
+    //grab price from order and setup payment
+    const myCard = new Payment(
+        {
+            amount: order.amountsBreakdown.customer + tipAmount,
+
+            // dashes are not needed, they get filtered out
+            number: process.env.CREDIT_CARD_NUMBER,
+
+            //slashes not needed, they get filtered out
+            expiration: process.env.CREDIT_CARD_EXPIRE,
+            securityCode: process.env.CREDIT_CARD_SECURITY_CODE,
+            postalCode: process.env.CREDIT_CARD_POSTAL_CODE,
+            tipAmount: tipAmount
+        }
+    )
+    order.payments.push(myCard)
+    return order
+}
+
+const deliver_order = async (order) => {
+    const dominos = await import('dominos')
+    Object.assign(global, dominos)
+
+    try {
+        //will throw a dominos error because
+        //we used a fake credit card
+        await order.place()
+
+        console.log('\n\nPlaced Order\n\n')
+        console.dir(order, { depth: 3 })
+    } catch (err) {
+        console.trace(err)
+
+        //inspect Order Response to see more information about the 
+        //failure, unless you added a real card, then you can inspect
+        //the order itself
+        console.log('\n\nFailed Order Probably Bad Card, here is order.priceResponse the raw response from Dominos\n\n')
+        console.dir(
+            order.placeResponse,
+            { depth: 5 }
+        )
+    }
+}
+
 const createRequest = (input, callback) => {
     // The Validator helps you validate the Chainlink request data
     const validator = new Validator(callback, input, customParams)
-    const id = validator.validated.id
+    const jobRunID = validator.validated.id
     const random_number = validator.validated.data.random_number
     const place_order = validator.validated.data.place_order || 'false'
-    const tmp_file = validator.validated.data.tmp_file || './'
-
-    let order_placed
-    let status_code = 200
-    let pizza = create_order(random_number)
-    console.log(pizza)
-    let file_name = tmp_file + 'pizza_order.json'
-    if (file_name[0] === '~') {
-        file_name = path.join(process.env.HOME, file_name.slice(1))
-    }
-    fs.writeFile(file_name, JSON.stringify(pizza), function (err) {
-        if (err) throw err
-        console.log('Saved!')
-    })
-    exec(`node ./node-dominos-pizza-api/example/order_pizza.js ${file_name} ${place_order}`, (error, stdout, stderr) => {
-        if (error) {
-            console.log(`error: ${error.message}`)
-            order_placed = "Issue placing order"
-            status_code = 400
-            return
-        }
-        if (stderr) {
-            console.log(`stderr: ${stderr}`)
-            order_placed = "Issue placing order"
-            status_code = 400
-            return
-        }
-        console.log(`stdout: ${stdout}`)
-    })
-
-    if (order_placed !== 'Issue placing order') {
+    let callback_object
+    try {
+        let status_code = 200
+        let pizza = create_random_pizza(random_number)
+        let result = "Fake Order Placed"
+        console.log(pizza)
+        order = build_order(pizza)
         if (place_order !== 'true') {
-            order_placed = 'Fake Order Placed'
+            console.log("Just pretending!")
         } else {
-            order_placed = 'Real Order Placed'
+            deliver_order(order)
+            result = "Order Placed!"
         }
+        callback_object = {
+            "jobRunID": `${jobRunID}`,
+            "data": {
+                "order_placed": place_order,
+                "result": result
+            },
+            "statusCode": status_code,
+            "result": result,
+            "status": 200
+        }
+        callback(callback_object.status, Requester.success(jobRunID, callback_object))
+    } catch {
+        status_code = 400
+        callback_object = {
+            "jobRunID": `${jobRunID}`,
+            "data": {
+                "order_placed": place_order
+            },
+            "statusCode": status_code,
+            "result": "Issue placing order",
+            "status": status_code
+        }
+        callback(500, Requester.errored(jobRunID, callback_object))
     }
-
-    callback_object = {
-        "jobRunID": `${id}`,
-        "data": {
-            "order_placed": order_placed
-        },
-        "statusCode": status_code,
-        "result": order_placed
-    }
-    callback(status_code, callback_object)
 }
 
 // This is a wrapper to allow the function to work with

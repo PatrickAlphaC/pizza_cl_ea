@@ -4,17 +4,18 @@ This repo is for demo purposes only and is filled with Garlic Bready Spaghetti c
 
 Right now, it's a bit hardcoded to a dominos in Belmont. You'll need to uncomment a section in order_pizza.js to search for nearby pizza joints near you. 
 
+THIS NEEDS TO BE nodejs v14!!
+
 ## Creating the adapter
 
 ```bash
 git clone https://github.com/PatrickAlphaC/pizza_cl_ea
 ```
 
-Enter into the newly-created directory, and then pull the repo with the pizza script
+Enter into the newly-created directory
 
 ```bash
 cd pizza_cl_ea
-git clone https://github.com/PatrickAlphaC/node-dominos-pizza-api
 ```
 
 You can remove the existing git history by running:
@@ -23,7 +24,7 @@ You can remove the existing git history by running:
 rm -rf .git
 ```
 
-Right now, the code for running the API is in `https://github.com/PatrickAlphaC/node-dominos-pizza-api/examples/order_pizza.js`. The server makes a command line call to this. Basically, I have no idea how to make a commonjs server work with ES6, and I didn't want to reinvent the pizza API. So.... if someone wants to fixup this repo so that it's not so disgusting... please do :)
+FYI, this is about as spaghetti as spaghetti code gets. 
 
 See [Install Locally](#install-locally) for a quickstart
 
@@ -53,12 +54,13 @@ curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data 
 
 ```json
 {
-  "id":"0",
+  "jobRunID":0,
   "data":{
-    "order_placed":"Fake Order Placed"
-    },
-  "statusCode":200,
-  "result":"Fake Order Placed"
+    "order_placed":"false",
+    "result":"Fake Order Placed"
+  },
+  "result":"Fake Order Placed",
+  "statusCode":200
 }
 ```
 
