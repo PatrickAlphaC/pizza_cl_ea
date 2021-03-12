@@ -42,11 +42,9 @@ const sauce_sizes = [0, 0.5, 1, 1.5]
 // sauces and amount of sauces
 const create_random_pizza = (random_number) => {
     let pizza = { 'options': {}, 'code': {} }
-    console.log(pizza)
     console.log(random_number)
     let pizza_size = random_number % pizza_sizes.length
     pizza['code'] = pizza_sizes[pizza_size]
-    console.log(pizza)
     let number_of_toppings_left = Math.round(random_number / 10) % 5
     let number_of_toppings_right = Math.round(random_number / 100) % 5
     let i
@@ -72,7 +70,7 @@ const create_random_pizza = (random_number) => {
     return (pizza)
 }
 
-const build_order = async (pizza) => {
+const build_and_send_order = async (pizza, place_order) => {
     const dominos = await import('dominos')
     Object.assign(global, dominos)
 
@@ -140,10 +138,8 @@ const build_order = async (pizza) => {
     order.addItem(pizza_pie)
     //validate order
     await order.validate()
-
     // console.log('\n\nValidate\n\n');
     //console.dir(order,{depth:3});
-
     //price order
     const price = await order.price()
     //console.log(price)
@@ -151,10 +147,11 @@ const build_order = async (pizza) => {
     // console.log('\n\nPrice\n\n');
     // console.dir(order,{depth:0});
     const tipAmount = 8
+
     //grab price from order and setup payment
     const myCard = new Payment(
         {
-            amount: order.amountsBreakdown.customer + tipAmount,
+            amount: order.amountsBreakdown.customer,
 
             // dashes are not needed, they get filtered out
             number: process.env.CREDIT_CARD_NUMBER,
@@ -167,33 +164,32 @@ const build_order = async (pizza) => {
         }
     )
     order.payments.push(myCard)
-    return order
-}
 
-const deliver_order = async (order) => {
-    const dominos = await import('dominos')
-    Object.assign(global, dominos)
+    console.log(order)
+    if (place_order !== 'true') {
+        return 200
+    } else {
+        try {
+            await order.place()
+            console.log('\n\nPlaced Order\n\n')
+            console.dir(order, { depth: 3 })
+        } catch (err) {
+            console.trace(err)
 
-    try {
-        //will throw a dominos error because
-        //we used a fake credit card
-        await order.place()
-
-        console.log('\n\nPlaced Order\n\n')
-        console.dir(order, { depth: 3 })
-    } catch (err) {
-        console.trace(err)
-
-        //inspect Order Response to see more information about the 
-        //failure, unless you added a real card, then you can inspect
-        //the order itself
-        console.log('\n\nFailed Order Probably Bad Card, here is order.priceResponse the raw response from Dominos\n\n')
-        console.dir(
-            order.placeResponse,
-            { depth: 5 }
-        )
+            //inspect Order Response to see more information about the 
+            //failure, unless you added a real card, then you can inspect
+            //the order itself
+            console.log('\n\nFailed Order Probably Bad Card, here is order.priceResponse the raw response from Dominos\n\n')
+            console.dir(
+                order.placeResponse,
+                { depth: 5 }
+            )
+            return 400
+        }
     }
+    return 200
 }
+
 
 const createRequest = (input, callback) => {
     // The Validator helps you validate the Chainlink request data
@@ -202,42 +198,39 @@ const createRequest = (input, callback) => {
     const random_number = validator.validated.data.random_number
     const place_order = validator.validated.data.place_order || 'false'
     let callback_object
-    try {
-        let status_code = 200
-        let pizza = create_random_pizza(random_number)
-        let result = "Fake Order Placed"
-        console.log(pizza)
-        order = build_order(pizza)
-        if (place_order !== 'true') {
-            console.log("Just pretending!")
-        } else {
-            deliver_order(order)
-            result = "Order Placed!"
-        }
+    let status_code
+    let pizza = create_random_pizza(random_number)
+    let result = "Fake Order Placed"
+    if (place_order === 'true') {
+        result = "Order Placed!"
+    }
+    build_and_send_order(pizza, place_order).then(response => {
+        status_code = response
         callback_object = {
             "jobRunID": `${jobRunID}`,
             "data": {
-                "order_placed": place_order,
+                "place_order": place_order,
                 "result": result
             },
             "statusCode": status_code,
             "result": result,
-            "status": 200
+            "status": status_code
         }
+        // console.log(callback_object)
         callback(callback_object.status, Requester.success(jobRunID, callback_object))
-    } catch {
+    }
+    ).catch(error => {
         status_code = 400
         callback_object = {
             "jobRunID": `${jobRunID}`,
             "data": {
-                "order_placed": place_order
+                "place_order": place_order
             },
             "statusCode": status_code,
             "result": "Issue placing order",
             "status": status_code
         }
-        callback(500, Requester.errored(jobRunID, callback_object))
-    }
+    })
 }
 
 // This is a wrapper to allow the function to work with

@@ -47,7 +47,7 @@ See [Install Locally](#install-locally) for a quickstart
 ## Input 
 
 ```bash
-curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "random_number":32456743214256 } }'
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "random_number":3245674321} }'
 ```
 
 ## Output
@@ -62,6 +62,12 @@ curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data 
   "result":"Fake Order Placed",
   "statusCode":200
 }
+```
+
+To run a real order:
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "random_number":3245674321, "place_order":"true" } }'
 ```
 
 ## Install Locally
