@@ -67,10 +67,13 @@ const create_random_pizza = (random_number) => {
         sauce = Math.round((random_number / 100000000) * i) % sauces.length
         pizza['options'][sauces[sauce]] = { '1/1': sauce_sizes[sauce_size] }
     }
+    console.log("pizza created!")
     return (pizza)
 }
 
 const build_and_send_order = async (pizza, place_order) => {
+    console.log("building...")
+
     const dominos = await import('dominos')
     Object.assign(global, dominos)
 
@@ -88,6 +91,8 @@ const build_and_send_order = async (pizza, place_order) => {
             email: process.env.EMAIL
         }
     )
+    console.log("created customer...")
+
     let storeID = 3755
     let distance = 100
     // find the nearest store
@@ -137,12 +142,17 @@ const build_and_send_order = async (pizza, place_order) => {
     // add pizza_pie
     order.addItem(pizza_pie)
     //validate order
+    console.log("added pizza to order")
+
     await order.validate()
+    console.log("order validated")
+
     // console.log('\n\nValidate\n\n');
     //console.dir(order,{depth:3});
     //price order
     const price = await order.price()
     //console.log(price)
+    console.log("order priced")
 
     // console.log('\n\nPrice\n\n');
     // console.dir(order,{depth:0});
@@ -163,6 +173,8 @@ const build_and_send_order = async (pizza, place_order) => {
             tipAmount: tipAmount
         }
     )
+    console.log("payment added")
+
     order.payments.push(myCard)
 
     console.log(order)
@@ -193,10 +205,14 @@ const build_and_send_order = async (pizza, place_order) => {
 
 const createRequest = (input, callback) => {
     // The Validator helps you validate the Chainlink request data
+    console.log("request started")
+
     const validator = new Validator(callback, input, customParams)
     const jobRunID = validator.validated.id
     const random_number = validator.validated.data.random_number
     const place_order = validator.validated.data.place_order || 'false'
+    console.log(`Parameters are ${random_number} and ${place_order}`)
+
     let callback_object
     let status_code
     let pizza = create_random_pizza(random_number)
@@ -216,6 +232,8 @@ const createRequest = (input, callback) => {
             "result": result,
             "status": status_code
         }
+        console.log("calling back...")
+
         // console.log(callback_object)
         callback(callback_object.status, Requester.success(jobRunID, callback_object))
     }
